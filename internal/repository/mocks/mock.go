@@ -34,6 +34,20 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
+// CheckAdmin mocks base method.
+func (m *MockRepository) CheckAdmin(id string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckAdmin", id)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckAdmin indicates an expected call of CheckAdmin.
+func (mr *MockRepositoryMockRecorder) CheckAdmin(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAdmin", reflect.TypeOf((*MockRepository)(nil).CheckAdmin), id)
+}
+
 // CreateUser mocks base method.
 func (m *MockRepository) CreateUser(u model.User) error {
 	m.ctrl.T.Helper()

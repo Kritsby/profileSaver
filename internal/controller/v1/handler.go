@@ -19,6 +19,13 @@ import (
 // @Failure 500
 // @Router /v1/user [POST]
 func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error {
+	ctx := req.Context()
+	ok := ctx.Value("is_admin")
+
+	if !ok.(bool) {
+		return h.responseJSON(w, req, http.StatusNetworkAuthenticationRequired, "don't have permission")
+	}
+
 	body := req.Body
 	defer body.Close()
 
@@ -85,6 +92,13 @@ func (h *Handler) getUser(w http.ResponseWriter, req bunrouter.Request) error {
 // @Failure 500
 // @Router /v1/user/{id} [PATCH]
 func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error {
+	ctx := req.Context()
+	ok := ctx.Value("is_admin")
+
+	if !ok.(bool) {
+		return h.responseJSON(w, req, http.StatusNetworkAuthenticationRequired, "don't have permission")
+	}
+
 	body := req.Body
 	defer body.Close()
 
@@ -117,6 +131,13 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 // @Failure 500
 // @Router /v1/user/{id} [DELETE]
 func (h *Handler) deleteUser(w http.ResponseWriter, req bunrouter.Request) error {
+	ctx := req.Context()
+	ok := ctx.Value("is_admin")
+
+	if !ok.(bool) {
+		return h.responseJSON(w, req, http.StatusNetworkAuthenticationRequired, "don't have permission")
+	}
+
 	id := req.Params().ByName("id")
 
 	err := h.repo.DeleteUser(id)

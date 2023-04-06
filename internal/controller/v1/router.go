@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"dev/profileSaver/internal/repository"
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -13,10 +12,10 @@ import (
 )
 
 type Handler struct {
-	repo repository.Repository
+	repo *repository.DB
 }
 
-func New(repo repository.Repository) *Handler {
+func New(repo *repository.DB) *Handler {
 	return &Handler{repo: repo}
 }
 
@@ -54,10 +53,6 @@ func (h *Handler) authMidleware(next bunrouter.HandlerFunc) bunrouter.HandlerFun
 
 		user, err := h.repo.GetUserByName(username)
 		if err != nil {
-			if errors.Is(err, errors.New(repository.BusysUsername)) {
-				askPassword(w)
-				return nil
-			}
 			internalError(w, err)
 			return nil
 		}
@@ -74,6 +69,17 @@ func (h *Handler) authMidleware(next bunrouter.HandlerFunc) bunrouter.HandlerFun
 		w.Header().Set("Content-Type", "application/json")
 		return next(w, req.WithContext(ctx))
 	}
+}
+
+func askPassword(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	w.WriteHeader(http.StatusUnauthorized)
+}
+
+func internalError(w http.ResponseWriter, err error) {
+	log.Error().Msgf("unable to get user from the store error - %s", err)
+	w.WriteHeader(http.StatusInternalServerError)
+	_, _ = w.Write([]byte("something went wrong"))
 }
 
 func (h *Handler) responseJSON(w http.ResponseWriter, req bunrouter.Request, code int, value interface{}) error {
@@ -94,16 +100,4 @@ func (h *Handler) responseJSON(w http.ResponseWriter, req bunrouter.Request, cod
 		"params": req.Params().Map(),
 		"data":   value,
 	})
-}
-
-func askPassword(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-	w.WriteHeader(http.StatusUnauthorized)
-}
-
-func internalError(w http.ResponseWriter, err error) {
-	//todo
-	//log.WithError(err).Error("unable to get user from the store")
-	w.WriteHeader(http.StatusInternalServerError)
-	_, _ = w.Write([]byte("something went wrong"))
 }
