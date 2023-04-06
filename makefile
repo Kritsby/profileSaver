@@ -4,8 +4,7 @@ build:
 	go build -o ${BINARY_NAME} cmd/service.go
 
 run:
-	go build -o ${BINARY_NAME} cmd/service.go
-	./${BINARY_NAME}
+	go run cmd/service.go
 
 tests:
 	go test	./...
