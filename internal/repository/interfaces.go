@@ -12,5 +12,4 @@ type Repository interface {
 	UpdateUser(u model.User) error
 	DeleteUser(id string) error
 	HashPass(password, salt []byte) ([]byte, []byte)
-	CheckAdmin(id string) bool
 }

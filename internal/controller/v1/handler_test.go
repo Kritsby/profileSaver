@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bytes"
+	"context"
 	"dev/profileSaver/internal/model"
 	mock_repository "dev/profileSaver/internal/repository/mocks"
 	"github.com/golang/mock/gomock"
@@ -12,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestHandler_stock(t *testing.T) {
+func Test_handler(t *testing.T) {
 	type mockBehavior func(s *mock_repository.MockRepository)
 
 	tests := []struct {
@@ -106,15 +107,19 @@ func TestHandler_stock(t *testing.T) {
 			case "CreateUser":
 				r.POST("/v1/user", handlers.createUser)
 
+				ctx := context.WithValue(context.Background(), "is_admin", true)
+
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("POST", "/v1/user",
-					bytes.NewBufferString(testCase.inputBody))
+					bytes.NewBufferString(testCase.inputBody)).WithContext(ctx)
 			case "UpdateUser":
 				r.PATCH("/v1/user", handlers.updateUser)
 
+				ctx := context.WithValue(context.Background(), "is_admin", true)
+
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("PATCH", "/v1/user",
-					bytes.NewBufferString(testCase.inputBody))
+					bytes.NewBufferString(testCase.inputBody)).WithContext(ctx)
 			case "GetUser":
 				r.GET("/v1/user/:id", handlers.getUser)
 
@@ -124,9 +129,11 @@ func TestHandler_stock(t *testing.T) {
 			case "DeleteUser":
 				r.DELETE("/v1/user/:id", handlers.deleteUser)
 
+				ctx := context.WithValue(context.Background(), "is_admin", true)
+
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("DELETE", "/v1/user/1",
-					nil)
+					nil).WithContext(ctx)
 			}
 
 			r.ServeHTTP(w, req)
