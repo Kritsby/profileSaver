@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"dev/profileSaver/internal/controller"
 	"dev/profileSaver/internal/model"
 	"encoding/json"
 	"errors"
@@ -25,7 +26,7 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 	body := req.Body
 	defer body.Close()
 
-	var newUser model.User
+	var newUser controller.UserRequest
 	if err := json.NewDecoder(body).Decode(&newUser); err != nil {
 		log.Error().Err(err)
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
@@ -36,7 +37,16 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
 	}
 
-	err = h.repo.CreateUser(newUser)
+	user := model.User{
+		ID:       "",
+		Email:    newUser.Email,
+		Username: newUser.Username,
+		Password: newUser.Password,
+		Salt:     nil,
+		Admin:    newUser.Admin,
+	}
+
+	err = h.repo.CreateUser(user)
 	if err != nil {
 		log.Error().Err(err)
 		return h.responseJSON(w, req, http.StatusInternalServerError, err)
@@ -57,7 +67,18 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 func (h *Handler) getAllUsers(w http.ResponseWriter, req bunrouter.Request) error {
 	users := h.repo.GetAllUsers()
 
-	return h.responseJSON(w, req, http.StatusOK, users)
+	var response []controller.UserResponse
+
+	for _, user := range users {
+		response = append(response, controller.UserResponse{
+			ID:       user.ID,
+			Email:    user.Email,
+			Username: user.Username,
+			Admin:    user.Admin,
+		})
+	}
+
+	return h.responseJSON(w, req, http.StatusOK, response)
 }
 
 // getUser
@@ -78,7 +99,14 @@ func (h *Handler) getUser(w http.ResponseWriter, req bunrouter.Request) error {
 		return h.responseJSON(w, req, http.StatusInternalServerError, err)
 	}
 
-	return h.responseJSON(w, req, http.StatusOK, user)
+	response := controller.UserResponse{
+		ID:       user.ID,
+		Email:    user.Email,
+		Username: user.Username,
+		Admin:    user.Admin,
+	}
+
+	return h.responseJSON(w, req, http.StatusOK, response)
 }
 
 // updateUser
@@ -96,22 +124,29 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 	body := req.Body
 	defer body.Close()
 
-	var newUser model.User
+	var newUser controller.UserRequest
 	if err := json.NewDecoder(body).Decode(&newUser); err != nil {
 		log.Error().Err(err)
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
 	}
-
-	id := req.Params().ByName("id")
-
-	newUser.ID = id
 
 	err := validate(newUser)
 	if err != nil {
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
 	}
 
-	err = h.repo.UpdateUser(newUser)
+	id := req.Params().ByName("id")
+
+	user := model.User{
+		ID:       id,
+		Email:    newUser.Email,
+		Username: newUser.Username,
+		Password: newUser.Password,
+		Salt:     nil,
+		Admin:    newUser.Admin,
+	}
+
+	err = h.repo.UpdateUser(user)
 	if err != nil {
 		return h.responseJSON(w, req, http.StatusInternalServerError, err)
 	}
@@ -141,7 +176,7 @@ func (h *Handler) deleteUser(w http.ResponseWriter, req bunrouter.Request) error
 	return h.responseJSON(w, req, http.StatusOK, "user was deleted")
 }
 
-func validate(newUser model.User) error {
+func validate(newUser controller.UserRequest) error {
 	var reason []string
 
 	if newUser.Username == "" {

@@ -90,7 +90,7 @@ func Test_handler(t *testing.T) {
 				s.EXPECT().GetAllUsers().Return([]model.User{})
 			},
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":[]}
+			expectedResponseBody: `{"data":null}
 `,
 		},
 		{
@@ -101,7 +101,7 @@ func Test_handler(t *testing.T) {
 				s.EXPECT().GetUserByID("1").Return(model.User{}, nil)
 			},
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":{"id":"","email":"","username":"","password":"","salt":null,"admin":false}}
+			expectedResponseBody: `{"data":{"id":"","email":"","username":"","admin":false}}
 `,
 		},
 		{
