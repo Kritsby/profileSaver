@@ -221,13 +221,13 @@ const docTemplate = `{
         "controller.UserResponse": {
             "type": "object",
             "properties": {
+                "admin": {
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 },
                 "username": {

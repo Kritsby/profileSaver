@@ -3,6 +3,7 @@ package v1
 import (
 	"dev/profileSaver/internal/controller"
 	"dev/profileSaver/internal/model"
+	"dev/profileSaver/internal/repository"
 	"encoding/json"
 	"errors"
 	"github.com/rs/zerolog/log"
@@ -49,7 +50,10 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 	err = h.repo.CreateUser(user)
 	if err != nil {
 		log.Error().Err(err)
-		return h.responseJSON(w, req, http.StatusInternalServerError, err)
+		if errors.Is(err, repository.ErrUserNameExists) {
+			return h.responseJSON(w, req, http.StatusBadRequest, err.Error())
+		}
+		return h.responseJSON(w, req, http.StatusInternalServerError, err.Error())
 	}
 
 	return h.responseJSON(w, req, http.StatusOK, "user was created")
@@ -96,7 +100,7 @@ func (h *Handler) getUser(w http.ResponseWriter, req bunrouter.Request) error {
 
 	user, err := h.repo.GetUserByID(id)
 	if err != nil {
-		return h.responseJSON(w, req, http.StatusInternalServerError, err)
+		return h.responseJSON(w, req, http.StatusInternalServerError, err.Error())
 	}
 
 	response := controller.UserResponse{
@@ -127,12 +131,12 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 	var newUser controller.UserRequest
 	if err := json.NewDecoder(body).Decode(&newUser); err != nil {
 		log.Error().Err(err)
-		return h.responseJSON(w, req, http.StatusBadRequest, err)
+		return h.responseJSON(w, req, http.StatusBadRequest, err.Error())
 	}
 
 	err := validate(newUser)
 	if err != nil {
-		return h.responseJSON(w, req, http.StatusBadRequest, err)
+		return h.responseJSON(w, req, http.StatusBadRequest, err.Error())
 	}
 
 	id := req.Params().ByName("id")
@@ -148,7 +152,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 
 	err = h.repo.UpdateUser(user)
 	if err != nil {
-		return h.responseJSON(w, req, http.StatusInternalServerError, err)
+		return h.responseJSON(w, req, http.StatusInternalServerError, err.Error())
 	}
 
 	return h.responseJSON(w, req, http.StatusOK, "user was updated")
@@ -170,7 +174,7 @@ func (h *Handler) deleteUser(w http.ResponseWriter, req bunrouter.Request) error
 
 	err := h.repo.DeleteUser(id)
 	if err != nil {
-		return h.responseJSON(w, req, http.StatusInternalServerError, err)
+		return h.responseJSON(w, req, http.StatusInternalServerError, err.Error())
 	}
 
 	return h.responseJSON(w, req, http.StatusOK, "user was deleted")
