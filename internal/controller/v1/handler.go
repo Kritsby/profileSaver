@@ -14,7 +14,7 @@ import (
 // @Description Create new user
 // @Accept  json
 // @Produce  json
-// @Param input body model.User true "user"
+// @Param input body model.UserRequest true "user"
 // @Success 200
 // @Failure 500
 // @Router /v1/user [POST]
@@ -29,7 +29,7 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 	body := req.Body
 	defer body.Close()
 
-	var newUser model.User
+	var newUser model.UserResponse
 	if err := json.NewDecoder(body).Decode(&newUser); err != nil {
 		log.Error().Err(err)
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
@@ -50,7 +50,7 @@ func (h *Handler) createUser(w http.ResponseWriter, req bunrouter.Request) error
 // @Description Get all users
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} model.User
+// @Success 200 {array} model.UserResponse
 // @Failure 500
 // @Router /v1/user [GET]
 func (h *Handler) getAllUsers(w http.ResponseWriter, req bunrouter.Request) error {
@@ -66,7 +66,7 @@ func (h *Handler) getAllUsers(w http.ResponseWriter, req bunrouter.Request) erro
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Success 200 {array} model.User
+// @Success 200 {array} model.UserResponse
 // @Failure 500
 // @Router /v1/user/{id} [GET]
 func (h *Handler) getUser(w http.ResponseWriter, req bunrouter.Request) error {
@@ -87,7 +87,7 @@ func (h *Handler) getUser(w http.ResponseWriter, req bunrouter.Request) error {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Param input body model.User false "user"
+// @Param input body model.UserRequest false "user"
 // @Success 200
 // @Failure 500
 // @Router /v1/user/{id} [PATCH]
@@ -102,7 +102,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 	body := req.Body
 	defer body.Close()
 
-	var newUser model.User
+	var newUser model.UserResponse
 	if err := json.NewDecoder(body).Decode(&newUser); err != nil {
 		log.Error().Err(err)
 		return h.responseJSON(w, req, http.StatusBadRequest, err)
@@ -127,7 +127,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, req bunrouter.Request) error
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Success 200 {array} model.User
+// @Success 200 {array} model.UserResponse
 // @Failure 500
 // @Router /v1/user/{id} [DELETE]
 func (h *Handler) deleteUser(w http.ResponseWriter, req bunrouter.Request) error {

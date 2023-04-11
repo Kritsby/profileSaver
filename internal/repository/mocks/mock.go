@@ -34,22 +34,8 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
-// CheckAdmin mocks base method.
-func (m *MockRepository) CheckAdmin(id string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAdmin", id)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckAdmin indicates an expected call of CheckAdmin.
-func (mr *MockRepositoryMockRecorder) CheckAdmin(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAdmin", reflect.TypeOf((*MockRepository)(nil).CheckAdmin), id)
-}
-
 // CreateUser mocks base method.
-func (m *MockRepository) CreateUser(u model.User) error {
+func (m *MockRepository) CreateUser(u model.UserResponse) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", u)
 	ret0, _ := ret[0].(error)
@@ -77,10 +63,10 @@ func (mr *MockRepositoryMockRecorder) DeleteUser(id interface{}) *gomock.Call {
 }
 
 // GetAllUsers mocks base method.
-func (m *MockRepository) GetAllUsers() []model.User {
+func (m *MockRepository) GetAllUsers() []model.UserResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllUsers")
-	ret0, _ := ret[0].([]model.User)
+	ret0, _ := ret[0].([]model.UserResponse)
 	return ret0
 }
 
@@ -91,10 +77,10 @@ func (mr *MockRepositoryMockRecorder) GetAllUsers() *gomock.Call {
 }
 
 // GetUserByID mocks base method.
-func (m *MockRepository) GetUserByID(id string) (model.User, error) {
+func (m *MockRepository) GetUserByID(id string) (model.UserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByID", id)
-	ret0, _ := ret[0].(model.User)
+	ret0, _ := ret[0].(model.UserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -106,10 +92,10 @@ func (mr *MockRepositoryMockRecorder) GetUserByID(id interface{}) *gomock.Call {
 }
 
 // GetUserByName mocks base method.
-func (m *MockRepository) GetUserByName(name string) (model.User, error) {
+func (m *MockRepository) GetUserByName(name string) (model.UserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByName", name)
-	ret0, _ := ret[0].(model.User)
+	ret0, _ := ret[0].(model.UserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -136,7 +122,7 @@ func (mr *MockRepositoryMockRecorder) HashPass(password, salt interface{}) *gomo
 }
 
 // UpdateUser mocks base method.
-func (m *MockRepository) UpdateUser(u model.User) error {
+func (m *MockRepository) UpdateUser(u model.UserResponse) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", u)
 	ret0, _ := ret[0].(error)

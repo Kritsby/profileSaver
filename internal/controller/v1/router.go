@@ -89,15 +89,11 @@ func (h *Handler) responseJSON(w http.ResponseWriter, req bunrouter.Request, cod
 	if code != http.StatusOK {
 		log.Warn().Msgf("route: %s, http code: %d, error: %v", req.Route(), code, value)
 		return bunrouter.JSON(w, bunrouter.H{
-			"route":  req.Route(),
-			"params": req.Params().Map(),
-			"error":  value,
+			"error": value,
 		})
 	}
 
 	return bunrouter.JSON(w, bunrouter.H{
-		"route":  req.Route(),
-		"params": req.Params().Map(),
-		"data":   value,
+		"data": value,
 	})
 }

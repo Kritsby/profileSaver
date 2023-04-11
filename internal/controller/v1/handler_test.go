@@ -5,6 +5,7 @@ import (
 	"context"
 	"dev/profileSaver/internal/model"
 	mock_repository "dev/profileSaver/internal/repository/mocks"
+	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bunrouter"
@@ -18,6 +19,7 @@ func Test_handler(t *testing.T) {
 
 	tests := []struct {
 		name                 string
+		isAdmin              bool
 		handler              string
 		method               string
 		inputBody            string
@@ -29,12 +31,48 @@ func Test_handler(t *testing.T) {
 			name:    "OK",
 			handler: "CreateUser",
 			method:  "POST",
+			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().CreateUser(model.User{}).Return(nil)
+				s.EXPECT().CreateUser(model.UserResponse{}).Return(nil)
 			},
 			inputBody:          `{}`,
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":"user was created","params":null,"route":"/v1/user"}
+			expectedResponseBody: `{"data":"user was created"}
+`,
+		},
+		{
+			name:    "NOT_OK",
+			handler: "CreateUser",
+			method:  "POST",
+			isAdmin: true,
+			mockBehavior: func(s *mock_repository.MockRepository) {
+				s.EXPECT().CreateUser(model.UserResponse{}).Return(errors.New("error"))
+			},
+			inputBody:          `{}`,
+			expectedStatusCode: 500,
+			expectedResponseBody: `{"error":{}}
+`,
+		},
+		{
+			name:               "NOT_ADMIN",
+			handler:            "CreateUser",
+			method:             "POST",
+			isAdmin:            false,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
+			inputBody:          `{}`,
+			expectedStatusCode: 511,
+			expectedResponseBody: `{"error":"don't have permission"}
+`,
+		},
+		{
+			name:               "BAD_REQUEST",
+			handler:            "CreateUser",
+			method:             "POST",
+			isAdmin:            true,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
+			inputBody:          `{1}`,
+			expectedStatusCode: 400,
+			expectedResponseBody: `{"error":{"Offset":2}}
 `,
 		},
 		{
@@ -42,10 +80,10 @@ func Test_handler(t *testing.T) {
 			method:  "GET",
 			handler: "GetAllUsers",
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().GetAllUsers().Return([]model.User{})
+				s.EXPECT().GetAllUsers().Return([]model.UserResponse{})
 			},
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":[],"params":null,"route":"/v1/user"}
+			expectedResponseBody: `{"data":[]}
 `,
 		},
 		{
@@ -53,33 +91,103 @@ func Test_handler(t *testing.T) {
 			method:  "GET",
 			handler: "GetUser",
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().GetUserByID("1").Return(model.User{}, nil)
+				s.EXPECT().GetUserByID("1").Return(model.UserResponse{}, nil)
 			},
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":{"ID":"","Email":"","Username":"","Password":"","Salt":null,"Admin":false},"params":{"id":"1"},"route":"/v1/user/:id"}
+			expectedResponseBody: `{"data":{"id":"","email":"","username":"","password":"","salt":null,"admin":false}}
+`,
+		},
+		{
+			name:    "NOT_OK",
+			method:  "GET",
+			handler: "GetUser",
+			mockBehavior: func(s *mock_repository.MockRepository) {
+				s.EXPECT().GetUserByID("1").Return(model.UserResponse{}, errors.New("error"))
+			},
+			expectedStatusCode: 500,
+			expectedResponseBody: `{"error":{}}
 `,
 		},
 		{
 			name:    "OK",
 			method:  "PATCH",
 			handler: "UpdateUser",
+			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().UpdateUser(model.User{}).Return(nil)
+				s.EXPECT().UpdateUser(model.UserResponse{}).Return(nil)
 			},
 			inputBody:          `{}`,
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":"user was updated","params":null,"route":"/v1/user"}
+			expectedResponseBody: `{"data":"user was updated"}
+`,
+		},
+		{
+			name:    "NOT_OK",
+			method:  "PATCH",
+			handler: "UpdateUser",
+			isAdmin: true,
+			mockBehavior: func(s *mock_repository.MockRepository) {
+				s.EXPECT().UpdateUser(model.UserResponse{}).Return(errors.New("error"))
+			},
+			inputBody:          `{}`,
+			expectedStatusCode: 500,
+			expectedResponseBody: `{"error":{}}
+`,
+		},
+		{
+			name:               "NOT_ADMIN",
+			method:             "PATCH",
+			handler:            "UpdateUser",
+			isAdmin:            false,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
+			inputBody:          `{}`,
+			expectedStatusCode: 511,
+			expectedResponseBody: `{"error":"don't have permission"}
+`,
+		},
+		{
+			name:               "NOT_ADMIN",
+			method:             "PATCH",
+			handler:            "UpdateUser",
+			isAdmin:            true,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
+			inputBody:          `{1}`,
+			expectedStatusCode: 400,
+			expectedResponseBody: `{"error":{"Offset":2}}
 `,
 		},
 		{
 			name:    "OK",
 			method:  "DELETE",
 			handler: "DeleteUser",
+			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
 				s.EXPECT().DeleteUser("1").Return(nil)
 			},
 			expectedStatusCode: 200,
-			expectedResponseBody: `{"data":"user was deleted","params":{"id":"1"},"route":"/v1/user/:id"}
+			expectedResponseBody: `{"data":"user was deleted"}
+`,
+		},
+		{
+			name:    "NOT_OK",
+			method:  "DELETE",
+			handler: "DeleteUser",
+			isAdmin: true,
+			mockBehavior: func(s *mock_repository.MockRepository) {
+				s.EXPECT().DeleteUser("1").Return(errors.New("error"))
+			},
+			expectedStatusCode: 500,
+			expectedResponseBody: `{"error":{}}
+`,
+		},
+		{
+			name:               "NOT_ADMIN",
+			method:             "DELETE",
+			handler:            "DeleteUser",
+			isAdmin:            false,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
+			expectedStatusCode: 511,
+			expectedResponseBody: `{"error":"don't have permission"}
 `,
 		},
 	}
@@ -109,6 +217,10 @@ func Test_handler(t *testing.T) {
 
 				ctx := context.WithValue(context.Background(), "is_admin", true)
 
+				if !testCase.isAdmin {
+					ctx = context.WithValue(context.Background(), "is_admin", false)
+				}
+
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("POST", "/v1/user",
 					bytes.NewBufferString(testCase.inputBody)).WithContext(ctx)
@@ -116,6 +228,10 @@ func Test_handler(t *testing.T) {
 				r.PATCH("/v1/user", handlers.updateUser)
 
 				ctx := context.WithValue(context.Background(), "is_admin", true)
+
+				if !testCase.isAdmin {
+					ctx = context.WithValue(context.Background(), "is_admin", false)
+				}
 
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("PATCH", "/v1/user",
@@ -130,6 +246,10 @@ func Test_handler(t *testing.T) {
 				r.DELETE("/v1/user/:id", handlers.deleteUser)
 
 				ctx := context.WithValue(context.Background(), "is_admin", true)
+
+				if !testCase.isAdmin {
+					ctx = context.WithValue(context.Background(), "is_admin", false)
+				}
 
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("DELETE", "/v1/user/1",

@@ -18,15 +18,15 @@ const (
 type DB struct {
 	mu     sync.RWMutex
 	userId map[string]string
-	store  map[string]model.User
+	store  map[string]model.UserResponse
 }
 
 func New() *DB {
 	userId := make(map[string]string)
-	store := make(map[string]model.User)
+	store := make(map[string]model.UserResponse)
 
 	userId["admin"] = "admin"
-	store["admin"] = model.User{
+	store["admin"] = model.UserResponse{
 		ID:       "admin",
 		Email:    "admin",
 		Username: "admin",
@@ -41,15 +41,15 @@ func New() *DB {
 	}
 }
 
-func (db *DB) CreateUser(u model.User) error {
+func (db *DB) CreateUser(u model.UserResponse) error {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
-
-	u.ID = uuid.New().String()
 
 	if _, ok := db.userId[u.Username]; ok {
 		return errors.New(BusysUsername)
 	}
+
+	u.ID = uuid.New().String()
 
 	hashedPass, salt := db.HashPass([]byte(u.Password), nil)
 
@@ -62,11 +62,11 @@ func (db *DB) CreateUser(u model.User) error {
 	return nil
 }
 
-func (db *DB) GetAllUsers() []model.User {
+func (db *DB) GetAllUsers() []model.UserResponse {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	users := make([]model.User, 0, len(db.store))
+	users := make([]model.UserResponse, 0, len(db.store))
 	for _, u := range db.store {
 		users = append(users, u)
 	}
@@ -74,31 +74,31 @@ func (db *DB) GetAllUsers() []model.User {
 	return users
 }
 
-func (db *DB) GetUserByName(name string) (model.User, error) {
+func (db *DB) GetUserByName(name string) (model.UserResponse, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
 	id, ok := db.userId[name]
 	if !ok {
-		return model.User{}, errors.New(UserNotFound)
+		return model.UserResponse{}, errors.New(UserNotFound)
 	}
 
 	return db.store[id], nil
 }
 
-func (db *DB) GetUserByID(id string) (model.User, error) {
+func (db *DB) GetUserByID(id string) (model.UserResponse, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
 	u, ok := db.store[id]
 	if !ok {
-		return model.User{}, errors.New(UserNotFound)
+		return model.UserResponse{}, errors.New(UserNotFound)
 	}
 
 	return u, nil
 }
 
-func (db *DB) UpdateUser(newUser model.User) error {
+func (db *DB) UpdateUser(newUser model.UserResponse) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -137,7 +137,7 @@ func (db *DB) DeleteUser(id string) error {
 	return nil
 }
 
-func (db *DB) updateUserFields(oldUser, newUser model.User) model.User {
+func (db *DB) updateUserFields(oldUser, newUser model.UserResponse) model.UserResponse {
 	if newUser.Username == "" {
 		newUser.Username = oldUser.Username
 	}
