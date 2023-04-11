@@ -35,7 +35,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -45,6 +45,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Create new user",
                 "consumes": [
                     "application/json"
@@ -63,7 +68,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/controller.UserRequest"
                         }
                     }
                 ],
@@ -105,7 +110,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -115,6 +120,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Delete user",
                 "consumes": [
                     "application/json"
@@ -141,7 +151,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -175,7 +185,7 @@ const docTemplate = `{
                         "name": "input",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/controller.UserRequest"
                         }
                     }
                 ],
@@ -191,12 +201,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.User": {
+        "controller.UserRequest": {
             "type": "object",
             "properties": {
                 "admin": {
                     "type": "boolean"
                 },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "controller.UserResponse": {
+            "type": "object",
+            "properties": {
                 "email": {
                     "type": "string"
                 },
@@ -206,16 +230,15 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "salt": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
                 "username": {
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
         }
     }
 }`

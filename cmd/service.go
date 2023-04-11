@@ -20,6 +20,8 @@ func init() {
 // @version 1.0
 // @description API Server
 // @BasePath /
+
+// @securityDefinitions.basic BasicAuth
 func main() {
 	err := app.Run(cfg)
 	if err != nil {

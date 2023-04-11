@@ -2,13 +2,11 @@ package v1
 
 import (
 	"bytes"
-	"context"
 	"dev/profileSaver/internal/model"
 	mock_repository "dev/profileSaver/internal/repository/mocks"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/uptrace/bunrouter"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,9 +31,13 @@ func Test_handler(t *testing.T) {
 			method:  "POST",
 			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().CreateUser(model.UserResponse{}).Return(nil)
+				s.EXPECT().CreateUser(model.User{
+					Email:    "test@mail.ru",
+					Username: "test",
+					Password: "test",
+				}).Return(nil)
 			},
-			inputBody:          `{}`,
+			inputBody:          `{"email":"test@mail.ru", "username":"test", "password":"test"}`,
 			expectedStatusCode: 200,
 			expectedResponseBody: `{"data":"user was created"}
 `,
@@ -46,23 +48,28 @@ func Test_handler(t *testing.T) {
 			method:  "POST",
 			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().CreateUser(model.UserResponse{}).Return(errors.New("error"))
+				s.EXPECT().CreateUser(model.User{
+					Email:    "test@mail.ru",
+					Username: "test",
+					Password: "test",
+				}).Return(errors.New("error"))
 			},
-			inputBody:          `{}`,
+			inputBody:          `{"email":"test@mail.ru", "username":"test", "password":"test"}`,
 			expectedStatusCode: 500,
 			expectedResponseBody: `{"error":{}}
 `,
 		},
 		{
-			name:               "NOT_ADMIN",
-			handler:            "CreateUser",
-			method:             "POST",
-			isAdmin:            false,
-			mockBehavior:       func(s *mock_repository.MockRepository) {},
-			inputBody:          `{}`,
-			expectedStatusCode: 511,
-			expectedResponseBody: `{"error":"don't have permission"}
-`,
+			name:    "NOT_ADMIN",
+			handler: "CreateUser",
+			method:  "POST",
+			isAdmin: false,
+			mockBehavior: func(s *mock_repository.MockRepository) {
+
+			},
+			inputBody:            `{"email":"test@mail.ru", "username":"test", "password":"test"}`,
+			expectedStatusCode:   401,
+			expectedResponseBody: "",
 		},
 		{
 			name:               "BAD_REQUEST",
@@ -80,7 +87,7 @@ func Test_handler(t *testing.T) {
 			method:  "GET",
 			handler: "GetAllUsers",
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().GetAllUsers().Return([]model.UserResponse{})
+				s.EXPECT().GetAllUsers().Return([]model.User{})
 			},
 			expectedStatusCode: 200,
 			expectedResponseBody: `{"data":[]}
@@ -91,7 +98,7 @@ func Test_handler(t *testing.T) {
 			method:  "GET",
 			handler: "GetUser",
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().GetUserByID("1").Return(model.UserResponse{}, nil)
+				s.EXPECT().GetUserByID("1").Return(model.User{}, nil)
 			},
 			expectedStatusCode: 200,
 			expectedResponseBody: `{"data":{"id":"","email":"","username":"","password":"","salt":null,"admin":false}}
@@ -102,7 +109,7 @@ func Test_handler(t *testing.T) {
 			method:  "GET",
 			handler: "GetUser",
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().GetUserByID("1").Return(model.UserResponse{}, errors.New("error"))
+				s.EXPECT().GetUserByID("1").Return(model.User{}, errors.New("error"))
 			},
 			expectedStatusCode: 500,
 			expectedResponseBody: `{"error":{}}
@@ -114,36 +121,38 @@ func Test_handler(t *testing.T) {
 			handler: "UpdateUser",
 			isAdmin: true,
 			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().UpdateUser(model.UserResponse{}).Return(nil)
+				s.EXPECT().UpdateUser(model.User{
+					ID:       "1",
+					Email:    "test@mail.ru",
+					Username: "test",
+					Password: "test",
+				}).Return(nil)
 			},
-			inputBody:          `{}`,
+			inputBody:          `{"email":"test@mail.ru", "username":"test", "password":"test"}`,
 			expectedStatusCode: 200,
 			expectedResponseBody: `{"data":"user was updated"}
 `,
 		},
 		{
-			name:    "NOT_OK",
-			method:  "PATCH",
-			handler: "UpdateUser",
-			isAdmin: true,
-			mockBehavior: func(s *mock_repository.MockRepository) {
-				s.EXPECT().UpdateUser(model.UserResponse{}).Return(errors.New("error"))
-			},
+			name:               "NOT_OK",
+			method:             "PATCH",
+			handler:            "UpdateUser",
+			isAdmin:            true,
+			mockBehavior:       func(s *mock_repository.MockRepository) {},
 			inputBody:          `{}`,
-			expectedStatusCode: 500,
+			expectedStatusCode: 400,
 			expectedResponseBody: `{"error":{}}
 `,
 		},
 		{
-			name:               "NOT_ADMIN",
-			method:             "PATCH",
-			handler:            "UpdateUser",
-			isAdmin:            false,
-			mockBehavior:       func(s *mock_repository.MockRepository) {},
-			inputBody:          `{}`,
-			expectedStatusCode: 511,
-			expectedResponseBody: `{"error":"don't have permission"}
-`,
+			name:                 "NOT_ADMIN",
+			method:               "PATCH",
+			handler:              "UpdateUser",
+			isAdmin:              false,
+			mockBehavior:         func(s *mock_repository.MockRepository) {},
+			inputBody:            `{}`,
+			expectedStatusCode:   401,
+			expectedResponseBody: "",
 		},
 		{
 			name:               "NOT_ADMIN",
@@ -181,14 +190,13 @@ func Test_handler(t *testing.T) {
 `,
 		},
 		{
-			name:               "NOT_ADMIN",
-			method:             "DELETE",
-			handler:            "DeleteUser",
-			isAdmin:            false,
-			mockBehavior:       func(s *mock_repository.MockRepository) {},
-			expectedStatusCode: 511,
-			expectedResponseBody: `{"error":"don't have permission"}
-`,
+			name:                 "NOT_ADMIN",
+			method:               "DELETE",
+			handler:              "DeleteUser",
+			isAdmin:              false,
+			mockBehavior:         func(s *mock_repository.MockRepository) {},
+			expectedStatusCode:   401,
+			expectedResponseBody: "",
 		},
 	}
 
@@ -198,62 +206,43 @@ func Test_handler(t *testing.T) {
 			defer c.Finish()
 
 			repo := mock_repository.NewMockRepository(c)
+			repo.EXPECT().IsAuthorized("admin", "admin").Return(true)
 			testCase.mockBehavior(repo)
 
 			handlers := New(repo)
 
-			r := bunrouter.New()
+			r := handlers.InitRouter()
 			var w *httptest.ResponseRecorder
 			var req *http.Request
 			switch testCase.handler {
 			case "GetAllUsers":
-				r.GET("/v1/user", handlers.getAllUsers)
-
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("GET", "/v1/user",
 					nil)
+				req.SetBasicAuth("admin", "admin")
 			case "CreateUser":
-				r.POST("/v1/user", handlers.createUser)
-
-				ctx := context.WithValue(context.Background(), "is_admin", true)
-
-				if !testCase.isAdmin {
-					ctx = context.WithValue(context.Background(), "is_admin", false)
-				}
-
+				repo.EXPECT().GetUserByName("admin").Return(model.User{Admin: testCase.isAdmin}, nil)
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("POST", "/v1/user",
-					bytes.NewBufferString(testCase.inputBody)).WithContext(ctx)
+					bytes.NewBufferString(testCase.inputBody))
+				req.SetBasicAuth("admin", "admin")
 			case "UpdateUser":
-				r.PATCH("/v1/user", handlers.updateUser)
-
-				ctx := context.WithValue(context.Background(), "is_admin", true)
-
-				if !testCase.isAdmin {
-					ctx = context.WithValue(context.Background(), "is_admin", false)
-				}
-
+				repo.EXPECT().GetUserByName("admin").Return(model.User{Admin: testCase.isAdmin}, nil)
 				w = httptest.NewRecorder()
-				req = httptest.NewRequest("PATCH", "/v1/user",
-					bytes.NewBufferString(testCase.inputBody)).WithContext(ctx)
+				req = httptest.NewRequest("PATCH", "/v1/user/1",
+					bytes.NewBufferString(testCase.inputBody))
+				req.SetBasicAuth("admin", "admin")
 			case "GetUser":
-				r.GET("/v1/user/:id", handlers.getUser)
-
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("GET", "/v1/user/1",
 					nil)
+				req.SetBasicAuth("admin", "admin")
 			case "DeleteUser":
-				r.DELETE("/v1/user/:id", handlers.deleteUser)
-
-				ctx := context.WithValue(context.Background(), "is_admin", true)
-
-				if !testCase.isAdmin {
-					ctx = context.WithValue(context.Background(), "is_admin", false)
-				}
-
+				repo.EXPECT().GetUserByName("admin").Return(model.User{Admin: testCase.isAdmin}, nil)
 				w = httptest.NewRecorder()
 				req = httptest.NewRequest("DELETE", "/v1/user/1",
-					nil).WithContext(ctx)
+					nil)
+				req.SetBasicAuth("admin", "admin")
 			}
 
 			r.ServeHTTP(w, req)

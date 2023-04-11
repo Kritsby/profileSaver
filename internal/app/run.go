@@ -4,6 +4,7 @@ import (
 	"context"
 	"dev/profileSaver/internal/config"
 	controller "dev/profileSaver/internal/controller/v1"
+	"dev/profileSaver/internal/model"
 	"dev/profileSaver/internal/repository"
 	"dev/profileSaver/internal/server"
 	"github.com/rs/zerolog/log"
@@ -16,6 +17,13 @@ import (
 func Run(cfg config.Config) error {
 	var err error
 	repo := repository.New()
+	repo.CreateUser(model.User{
+		Email:    "admin",
+		Username: "admin",
+		Password: "admin",
+		Admin:    true,
+	})
+
 	handler := controller.New(repo)
 
 	srv := new(server.Server)

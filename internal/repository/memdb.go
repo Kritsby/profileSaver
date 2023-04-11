@@ -10,30 +10,20 @@ import (
 	"sync"
 )
 
-const (
-	BusysUsername = "username is busy"
-	UserNotFound  = "user not found"
+var (
+	ErrUserNameExists = errors.New("username exists")
+	ErrUserNotFound   = errors.New("user not found")
 )
 
 type DB struct {
 	mu     sync.RWMutex
 	userId map[string]string
-	store  map[string]model.UserResponse
+	store  map[string]model.User
 }
 
 func New() *DB {
 	userId := make(map[string]string)
-	store := make(map[string]model.UserResponse)
-
-	userId["admin"] = "admin"
-	store["admin"] = model.UserResponse{
-		ID:       "admin",
-		Email:    "admin",
-		Username: "admin",
-		Password: "admin",
-		Salt:     nil,
-		Admin:    true,
-	}
+	store := make(map[string]model.User)
 	return &DB{
 		mu:     sync.RWMutex{},
 		userId: userId,
@@ -41,17 +31,17 @@ func New() *DB {
 	}
 }
 
-func (db *DB) CreateUser(u model.UserResponse) error {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
+func (db *DB) CreateUser(u model.User) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
 
 	if _, ok := db.userId[u.Username]; ok {
-		return errors.New(BusysUsername)
+		return ErrUserNameExists
 	}
 
 	u.ID = uuid.New().String()
 
-	hashedPass, salt := db.HashPass([]byte(u.Password), nil)
+	hashedPass, salt := db.hashPass([]byte(u.Password), nil)
 
 	u.Password = fmt.Sprintf("%x", hashedPass)
 	u.Salt = salt
@@ -62,11 +52,11 @@ func (db *DB) CreateUser(u model.UserResponse) error {
 	return nil
 }
 
-func (db *DB) GetAllUsers() []model.UserResponse {
+func (db *DB) GetAllUsers() []model.User {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	users := make([]model.UserResponse, 0, len(db.store))
+	users := make([]model.User, 0, len(db.store))
 	for _, u := range db.store {
 		users = append(users, u)
 	}
@@ -74,51 +64,55 @@ func (db *DB) GetAllUsers() []model.UserResponse {
 	return users
 }
 
-func (db *DB) GetUserByName(name string) (model.UserResponse, error) {
+func (db *DB) GetUserByName(name string) (model.User, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
 	id, ok := db.userId[name]
 	if !ok {
-		return model.UserResponse{}, errors.New(UserNotFound)
+		return model.User{}, ErrUserNotFound
 	}
 
 	return db.store[id], nil
 }
 
-func (db *DB) GetUserByID(id string) (model.UserResponse, error) {
+func (db *DB) GetUserByID(id string) (model.User, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
 	u, ok := db.store[id]
 	if !ok {
-		return model.UserResponse{}, errors.New(UserNotFound)
+		return model.User{}, ErrUserNotFound
 	}
 
 	return u, nil
 }
 
-func (db *DB) UpdateUser(newUser model.UserResponse) error {
+func (db *DB) UpdateUser(u model.User) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	oldUser, ok := db.store[newUser.ID]
+	old, ok := db.store[u.ID]
 	if !ok {
-		return errors.New(UserNotFound)
+		return ErrUserNotFound
 	}
 
-	user := db.updateUserFields(oldUser, newUser)
+	hashedPass, salt := db.hashPass([]byte(u.Password), nil)
 
-	if user.Username != oldUser.Username {
-		if _, ok = db.userId[newUser.Username]; ok {
-			return errors.New(BusysUsername)
+	u.Password = fmt.Sprintf("%x", hashedPass)
+	u.Salt = salt
+
+	if old.Username != u.Username {
+		if _, ok := db.userId[u.Username]; ok {
+			return ErrUserNameExists
 		}
 
-		delete(db.userId, oldUser.Username)
-		db.userId[newUser.Username] = newUser.ID
+		delete(db.userId, old.Username)
+		db.userId[u.Username] = u.ID
 	}
 
-	db.store[newUser.ID] = newUser
+	db.store[u.ID] = u
+
 	return nil
 }
 
@@ -128,7 +122,7 @@ func (db *DB) DeleteUser(id string) error {
 
 	u, ok := db.store[id]
 	if !ok {
-		return errors.New(UserNotFound)
+		return ErrUserNotFound
 	}
 
 	delete(db.userId, u.Username)
@@ -137,7 +131,7 @@ func (db *DB) DeleteUser(id string) error {
 	return nil
 }
 
-func (db *DB) updateUserFields(oldUser, newUser model.UserResponse) model.UserResponse {
+func (db *DB) updateUserFields(oldUser, newUser model.User) model.User {
 	if newUser.Username == "" {
 		newUser.Username = oldUser.Username
 	}
@@ -150,7 +144,7 @@ func (db *DB) updateUserFields(oldUser, newUser model.UserResponse) model.UserRe
 		newUser.Password = oldUser.Password
 	}
 
-	hashedPass, _ := db.HashPass([]byte(newUser.Password), oldUser.Salt)
+	hashedPass, _ := db.hashPass([]byte(newUser.Password), oldUser.Salt)
 
 	newUser.Password = string(hashedPass)
 	newUser.Salt = oldUser.Salt
@@ -161,7 +155,7 @@ func (db *DB) updateUserFields(oldUser, newUser model.UserResponse) model.UserRe
 	return newUser
 }
 
-func (db *DB) HashPass(password, salt []byte) ([]byte, []byte) {
+func (db *DB) hashPass(password, salt []byte) ([]byte, []byte) {
 	if salt == nil {
 		salt = make([]byte, 8)
 		rand.Read(salt)
@@ -169,4 +163,27 @@ func (db *DB) HashPass(password, salt []byte) ([]byte, []byte) {
 	hashedPass := argon2.IDKey(password, salt, 1, 64*1024, 4, 32)
 
 	return hashedPass, salt
+}
+
+func (db *DB) IsAuthorized(username, password string) bool {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	uID, ok := db.userId[username]
+
+	if !ok {
+		return false
+	}
+
+	user := db.store[uID]
+
+	hashPass, _ := db.hashPass([]byte(password), user.Salt)
+
+	pas := fmt.Sprintf("%x", hashPass)
+
+	if pas != user.Password {
+		return false
+	}
+
+	return true
 }

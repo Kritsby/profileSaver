@@ -1,9 +1,7 @@
 package v1
 
 import (
-	"context"
 	"dev/profileSaver/internal/repository"
-	"fmt"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/uptrace/bunrouter"
@@ -22,7 +20,7 @@ func New(repo repository.Repository) *Handler {
 func (h *Handler) InitRouter() *bunrouter.Router {
 	router := bunrouter.New(
 		bunrouter.Use(reqlog.NewMiddleware()),
-		bunrouter.Use(h.authMidleware),
+		bunrouter.Use(h.authMiddleware),
 	)
 
 	swagHandler := httpSwagger.Handler(
@@ -33,20 +31,37 @@ func (h *Handler) InitRouter() *bunrouter.Router {
 
 	router.WithGroup("/v1", func(g *bunrouter.Group) {
 		g.WithGroup("/user", func(g *bunrouter.Group) {
-			g.POST("", h.createUser)
+			g.WithMiddleware(h.isAdminMiddleware).POST("", h.createUser)
+			g.WithMiddleware(h.isAdminMiddleware).PATCH("/:id", h.updateUser)
+			g.WithMiddleware(h.isAdminMiddleware).DELETE("/:id", h.deleteUser)
 			g.GET("", h.getAllUsers)
 			g.GET("/:id", h.getUser)
-			g.PATCH("/:id", h.updateUser)
-			g.DELETE("/:id", h.deleteUser)
 		})
 	})
 
 	return router
 }
 
-func (h *Handler) authMidleware(next bunrouter.HandlerFunc) bunrouter.HandlerFunc {
+func (h *Handler) authMiddleware(next bunrouter.HandlerFunc) bunrouter.HandlerFunc {
 	return func(w http.ResponseWriter, req bunrouter.Request) error {
 		username, password, ok := req.BasicAuth()
+		if !ok {
+			askPassword(w)
+		}
+
+		if !h.repo.IsAuthorized(username, password) {
+			askPassword(w)
+			return nil
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		return next(w, req)
+	}
+}
+
+func (h *Handler) isAdminMiddleware(next bunrouter.HandlerFunc) bunrouter.HandlerFunc {
+	return func(w http.ResponseWriter, req bunrouter.Request) error {
+		username, _, ok := req.BasicAuth()
 		if !ok {
 			askPassword(w)
 		}
@@ -57,17 +72,13 @@ func (h *Handler) authMidleware(next bunrouter.HandlerFunc) bunrouter.HandlerFun
 			return nil
 		}
 
-		userPasswrod, _ := h.repo.HashPass([]byte(password), user.Salt)
-
-		if user.Password != fmt.Sprintf("%x", userPasswrod) && user.Username != "admin" {
-			askPassword(w)
+		if !user.Admin {
+			w.WriteHeader(http.StatusUnauthorized)
 			return nil
 		}
 
-		ctx := context.WithValue(req.Context(), "is_admin", user.Admin)
-
 		w.Header().Set("Content-Type", "application/json")
-		return next(w, req.WithContext(ctx))
+		return next(w, req)
 	}
 }
 

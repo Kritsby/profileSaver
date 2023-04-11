@@ -27,7 +27,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -37,6 +37,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Create new user",
                 "consumes": [
                     "application/json"
@@ -55,7 +60,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/controller.UserRequest"
                         }
                     }
                 ],
@@ -97,7 +102,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -107,6 +112,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Delete user",
                 "consumes": [
                     "application/json"
@@ -133,7 +143,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.User"
+                                "$ref": "#/definitions/controller.UserResponse"
                             }
                         }
                     },
@@ -167,7 +177,7 @@
                         "name": "input",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/controller.UserRequest"
                         }
                     }
                 ],
@@ -183,12 +193,26 @@
         }
     },
     "definitions": {
-        "model.User": {
+        "controller.UserRequest": {
             "type": "object",
             "properties": {
                 "admin": {
                     "type": "boolean"
                 },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "controller.UserResponse": {
+            "type": "object",
+            "properties": {
                 "email": {
                     "type": "string"
                 },
@@ -198,16 +222,15 @@
                 "password": {
                     "type": "string"
                 },
-                "salt": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
                 "username": {
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
         }
     }
 }

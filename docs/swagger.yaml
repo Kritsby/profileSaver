@@ -1,19 +1,24 @@
 basePath: /
 definitions:
-  model.User:
+  controller.UserRequest:
     properties:
       admin:
         type: boolean
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  controller.UserResponse:
+    properties:
       email:
         type: string
       id:
         type: string
       password:
         type: string
-      salt:
-        items:
-          type: integer
-        type: array
       username:
         type: string
     type: object
@@ -35,7 +40,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.User'
+              $ref: '#/definitions/controller.UserResponse'
             type: array
         "500":
           description: Internal Server Error
@@ -52,7 +57,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.User'
+          $ref: '#/definitions/controller.UserRequest'
       produces:
       - application/json
       responses:
@@ -60,6 +65,8 @@ paths:
           description: OK
         "500":
           description: Internal Server Error
+      security:
+      - BasicAuth: []
       summary: Create new user
       tags:
       - User
@@ -81,10 +88,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.User'
+              $ref: '#/definitions/controller.UserResponse'
             type: array
         "500":
           description: Internal Server Error
+      security:
+      - BasicAuth: []
       summary: Delete user
       tags:
       - User
@@ -105,7 +114,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.User'
+              $ref: '#/definitions/controller.UserResponse'
             type: array
         "500":
           description: Internal Server Error
@@ -126,7 +135,7 @@ paths:
         in: body
         name: input
         schema:
-          $ref: '#/definitions/model.User'
+          $ref: '#/definitions/controller.UserRequest'
       produces:
       - application/json
       responses:
@@ -137,4 +146,7 @@ paths:
       summary: Update user
       tags:
       - User
+securityDefinitions:
+  BasicAuth:
+    type: basic
 swagger: "2.0"

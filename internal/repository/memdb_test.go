@@ -2,7 +2,6 @@ package repository
 
 import (
 	"dev/profileSaver/internal/model"
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -10,15 +9,17 @@ import (
 func TestDB_CreateUser(t *testing.T) {
 	db := New()
 
+	db.userId["admin"] = ""
+
 	tests := []struct {
 		name        string
 		expectedErr error
-		input       model.UserResponse
+		input       model.User
 	}{
 		{
 			name:        "OK",
 			expectedErr: nil,
-			input: model.UserResponse{
+			input: model.User{
 				ID:       "",
 				Email:    "test@mail.ru",
 				Username: "test",
@@ -29,8 +30,8 @@ func TestDB_CreateUser(t *testing.T) {
 		},
 		{
 			name:        "NOT_OK",
-			expectedErr: errors.New(BusysUsername),
-			input: model.UserResponse{
+			expectedErr: ErrUserNameExists,
+			input: model.User{
 				ID:       "",
 				Email:    "",
 				Username: "admin",
@@ -53,7 +54,16 @@ func TestDB_CreateUser(t *testing.T) {
 func TestDB_GetAllUsers(t *testing.T) {
 	db := New()
 
-	expected := []model.UserResponse{
+	db.store["admin"] = model.User{
+		ID:       "admin",
+		Email:    "admin",
+		Username: "admin",
+		Password: "admin",
+		Salt:     nil,
+		Admin:    true,
+	}
+
+	expected := []model.User{
 		{
 			ID:       "admin",
 			Email:    "admin",
@@ -72,16 +82,27 @@ func TestDB_GetAllUsers(t *testing.T) {
 func TestDB_GetUserByID(t *testing.T) {
 	db := New()
 
+	db.userId["admin"] = "admin"
+
+	db.store["admin"] = model.User{
+		ID:       "admin",
+		Email:    "admin",
+		Username: "admin",
+		Password: "admin",
+		Salt:     nil,
+		Admin:    true,
+	}
+
 	tests := []struct {
 		name        string
 		expectedErr error
-		expectedRes model.UserResponse
+		expectedRes model.User
 		input       string
 	}{
 		{
 			name:        "OK",
 			expectedErr: nil,
-			expectedRes: model.UserResponse{
+			expectedRes: model.User{
 				ID:       "admin",
 				Email:    "admin",
 				Username: "admin",
@@ -93,8 +114,8 @@ func TestDB_GetUserByID(t *testing.T) {
 		},
 		{
 			name:        "NOT_OK",
-			expectedErr: errors.New(UserNotFound),
-			expectedRes: model.UserResponse{},
+			expectedErr: ErrUserNotFound,
+			expectedRes: model.User{},
 			input:       "1",
 		},
 	}
@@ -112,16 +133,27 @@ func TestDB_GetUserByID(t *testing.T) {
 func TestDB_GetUserByName(t *testing.T) {
 	db := New()
 
+	db.userId["admin"] = "admin"
+
+	db.store["admin"] = model.User{
+		ID:       "admin",
+		Email:    "admin",
+		Username: "admin",
+		Password: "admin",
+		Salt:     nil,
+		Admin:    true,
+	}
+
 	tests := []struct {
 		name        string
 		expectedErr error
-		expectedRes model.UserResponse
+		expectedRes model.User
 		input       string
 	}{
 		{
 			name:        "OK",
 			expectedErr: nil,
-			expectedRes: model.UserResponse{
+			expectedRes: model.User{
 				ID:       "admin",
 				Email:    "admin",
 				Username: "admin",
@@ -133,8 +165,8 @@ func TestDB_GetUserByName(t *testing.T) {
 		},
 		{
 			name:        "NOT_OK",
-			expectedErr: errors.New(UserNotFound),
-			expectedRes: model.UserResponse{},
+			expectedErr: ErrUserNotFound,
+			expectedRes: model.User{},
 			input:       "1",
 		},
 	}
@@ -152,8 +184,18 @@ func TestDB_GetUserByName(t *testing.T) {
 func TestDB_UpdateUser(t *testing.T) {
 	db := New()
 
+	db.userId["admin"] = "admin"
+	db.store["admin"] = model.User{
+		ID:       "admin",
+		Email:    "admin",
+		Username: "admin",
+		Password: "admin",
+		Salt:     nil,
+		Admin:    true,
+	}
+
 	db.userId["test"] = "admin"
-	db.store["test"] = model.UserResponse{
+	db.store["test"] = model.User{
 		ID:       "test",
 		Email:    "test",
 		Username: "test",
@@ -165,12 +207,12 @@ func TestDB_UpdateUser(t *testing.T) {
 	tests := []struct {
 		name        string
 		expectedErr error
-		input       model.UserResponse
+		input       model.User
 	}{
 		{
 			name:        "OK",
 			expectedErr: nil,
-			input: model.UserResponse{
+			input: model.User{
 				ID:       "test",
 				Email:    "",
 				Username: "random",
@@ -179,8 +221,8 @@ func TestDB_UpdateUser(t *testing.T) {
 		},
 		{
 			name:        "NOT_FOUND",
-			expectedErr: errors.New(UserNotFound),
-			input: model.UserResponse{
+			expectedErr: ErrUserNotFound,
+			input: model.User{
 				ID:       "1",
 				Email:    "",
 				Username: "",
@@ -189,8 +231,8 @@ func TestDB_UpdateUser(t *testing.T) {
 		},
 		{
 			name:        "BUSY_USER_NAME",
-			expectedErr: errors.New(BusysUsername),
-			input: model.UserResponse{
+			expectedErr: ErrUserNameExists,
+			input: model.User{
 				ID:       "test",
 				Email:    "",
 				Username: "admin",
@@ -212,7 +254,7 @@ func TestDB_DeleteUser(t *testing.T) {
 	db := New()
 
 	db.userId["test"] = "admin"
-	db.store["test"] = model.UserResponse{
+	db.store["test"] = model.User{
 		ID:       "test",
 		Email:    "test",
 		Username: "test",
@@ -234,7 +276,7 @@ func TestDB_DeleteUser(t *testing.T) {
 		{
 			name:        "USER_NOT_FOUND",
 			input:       "1",
-			expectedErr: errors.New(UserNotFound),
+			expectedErr: ErrUserNotFound,
 		},
 	}
 

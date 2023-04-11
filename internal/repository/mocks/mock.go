@@ -35,7 +35,7 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockRepository) CreateUser(u model.UserResponse) error {
+func (m *MockRepository) CreateUser(u model.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", u)
 	ret0, _ := ret[0].(error)
@@ -63,10 +63,10 @@ func (mr *MockRepositoryMockRecorder) DeleteUser(id interface{}) *gomock.Call {
 }
 
 // GetAllUsers mocks base method.
-func (m *MockRepository) GetAllUsers() []model.UserResponse {
+func (m *MockRepository) GetAllUsers() []model.User {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllUsers")
-	ret0, _ := ret[0].([]model.UserResponse)
+	ret0, _ := ret[0].([]model.User)
 	return ret0
 }
 
@@ -77,10 +77,10 @@ func (mr *MockRepositoryMockRecorder) GetAllUsers() *gomock.Call {
 }
 
 // GetUserByID mocks base method.
-func (m *MockRepository) GetUserByID(id string) (model.UserResponse, error) {
+func (m *MockRepository) GetUserByID(id string) (model.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByID", id)
-	ret0, _ := ret[0].(model.UserResponse)
+	ret0, _ := ret[0].(model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -92,10 +92,10 @@ func (mr *MockRepositoryMockRecorder) GetUserByID(id interface{}) *gomock.Call {
 }
 
 // GetUserByName mocks base method.
-func (m *MockRepository) GetUserByName(name string) (model.UserResponse, error) {
+func (m *MockRepository) GetUserByName(name string) (model.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByName", name)
-	ret0, _ := ret[0].(model.UserResponse)
+	ret0, _ := ret[0].(model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -106,23 +106,22 @@ func (mr *MockRepositoryMockRecorder) GetUserByName(name interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByName", reflect.TypeOf((*MockRepository)(nil).GetUserByName), name)
 }
 
-// HashPass mocks base method.
-func (m *MockRepository) HashPass(password, salt []byte) ([]byte, []byte) {
+// IsAuthorized mocks base method.
+func (m *MockRepository) IsAuthorized(username, password string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HashPass", password, salt)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "IsAuthorized", username, password)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
-// HashPass indicates an expected call of HashPass.
-func (mr *MockRepositoryMockRecorder) HashPass(password, salt interface{}) *gomock.Call {
+// IsAuthorized indicates an expected call of IsAuthorized.
+func (mr *MockRepositoryMockRecorder) IsAuthorized(username, password interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HashPass", reflect.TypeOf((*MockRepository)(nil).HashPass), password, salt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAuthorized", reflect.TypeOf((*MockRepository)(nil).IsAuthorized), username, password)
 }
 
 // UpdateUser mocks base method.
-func (m *MockRepository) UpdateUser(u model.UserResponse) error {
+func (m *MockRepository) UpdateUser(u model.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", u)
 	ret0, _ := ret[0].(error)
