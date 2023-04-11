@@ -7,3 +7,6 @@
 ### default username - admin
 
 ### default password - admin
+
+### config.env
+#### environment variable "PORT" set server port listening
