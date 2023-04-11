@@ -56,7 +56,7 @@ func Test_handler(t *testing.T) {
 			},
 			inputBody:          `{"email":"test@mail.ru", "username":"test", "password":"test"}`,
 			expectedStatusCode: 500,
-			expectedResponseBody: `{"error":{}}
+			expectedResponseBody: `{"error":"error"}
 `,
 		},
 		{
@@ -112,7 +112,7 @@ func Test_handler(t *testing.T) {
 				s.EXPECT().GetUserByID("1").Return(model.User{}, errors.New("error"))
 			},
 			expectedStatusCode: 500,
-			expectedResponseBody: `{"error":{}}
+			expectedResponseBody: `{"error":"error"}
 `,
 		},
 		{
@@ -141,7 +141,7 @@ func Test_handler(t *testing.T) {
 			mockBehavior:       func(s *mock_repository.MockRepository) {},
 			inputBody:          `{}`,
 			expectedStatusCode: 400,
-			expectedResponseBody: `{"error":{}}
+			expectedResponseBody: `{"error":"empty username, empty password, empty email"}
 `,
 		},
 		{
@@ -162,7 +162,7 @@ func Test_handler(t *testing.T) {
 			mockBehavior:       func(s *mock_repository.MockRepository) {},
 			inputBody:          `{1}`,
 			expectedStatusCode: 400,
-			expectedResponseBody: `{"error":{"Offset":2}}
+			expectedResponseBody: `{"error":"invalid character '1' looking for beginning of object key string"}
 `,
 		},
 		{
@@ -186,7 +186,7 @@ func Test_handler(t *testing.T) {
 				s.EXPECT().DeleteUser("1").Return(errors.New("error"))
 			},
 			expectedStatusCode: 500,
-			expectedResponseBody: `{"error":{}}
+			expectedResponseBody: `{"error":"error"}
 `,
 		},
 		{
